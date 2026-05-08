@@ -1,123 +1,195 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto Táxi Aquidabã</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moto Táxi Pro - Gestão Total</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --green: #22c55e; --blue: #3b82f6; --dark: #0f172a; --card: #1e293b; }
-        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        :root { --primary: #28a745; --driver-blue: #1967d2; --danger: #dc3545; --admin-gold: #f39c12; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
+        .container { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 95%; position: relative; margin-top: 20px; height: fit-content; }
         
-        /* ESTILO DO MENU RAIZ */
-        #menu-raiz { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .btn-link { width: 100%; max-width: 350px; background: var(--card); color: white; text-decoration: none; padding: 20px; margin-bottom: 15px; border-radius: 18px; border: 1px solid #334155; font-weight: bold; text-align: center; font-size: 18px; }
-        .btn-link.destaque { border-color: var(--green); background: rgba(34, 197, 94, 0.05); }
+        #map { height: 200px; width: 100%; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
+        .route-info { text-align: left; background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--primary); }
+        .price-tag { font-size: 1.5rem; color: var(--primary); font-weight: bold; margin: 10px 0; }
+        .btn-main { background-color: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; width: 100%; margin-bottom: 10px; }
+        
+        /* Modos */
+        .painel { display: none; }
+        .ativo { display: block; }
 
-        /* ESTILO DO SISTEMA DE CÁLCULO */
-        #sistema-calculo { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
-        .card { background: var(--card); padding: 25px; border-radius: 25px; width: 100%; max-width: 380px; box-sizing: border-box; border: 1px solid #334155; text-align: center; }
+        /* Painel Admin */
+        .admin-item { display: flex; align-items: center; justify-content: space-between; background: #eee; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 0.9rem; }
+        .btn-sm { padding: 5px 10px; font-size: 0.7rem; cursor: pointer; }
         
-        input { width: 100%; padding: 16px; margin: 12px 0; border-radius: 12px; border: 1px solid #334155; background: var(--dark); color: white; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; }
-        .btn-gps { background: var(--blue); color: white; }
-        .btn-calc { background: var(--green); color: white; }
-        
-        #box-res { display: none; margin-top: 25px; padding: 15px; border: 2px dashed var(--green); border-radius: 15px; background: rgba(34, 197, 94, 0.1); }
-        .preco { font-size: 36px; font-weight: 800; color: var(--green); margin: 5px 0; display: block; }
-
-        /* Estilo Google Autocomplete */
-        .pac-container { background: var(--card) !important; border: 1px solid #334155 !important; border-radius: 10px; z-index: 9999 !important; color: white !important; }
-        .pac-item { color: #94a3b8 !important; border-top: 1px solid #334155 !important; padding: 10px; }
-        .pac-item-query { color: white !important; }
+        .driver-header { display: flex; align-items: center; gap: 10px; text-align: left; margin-bottom: 15px; background: #eef2ff; padding: 10px; border-radius: 8px; position: relative; }
+        .driver-photo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #ccc; border: 2px solid var(--driver-blue); }
+        .nav-links { position: absolute; top: 5px; right: 10px; font-size: 0.65rem; color: #aaa; }
     </style>
 </head>
 <body>
 
-    <div id="menu-raiz">
-        <div style="font-size: 60px;">🏍️</div>
-        <h2 style="color: var(--green); margin-bottom: 40px;">Moto Táxi Aquidabã</h2>
-        
-        <a href="javascript:void(0)" class="btn-link destaque" onclick="abrirCalculadora()">💰 APP DO CLIENTE</a>
-        <a href="https://wa.me/5579999999999" class="btn-link">📲 SUPORTE / GERENTE</a>
-        <a href="#" class="btn-link">⚙️ PAINEL DO PILOTO</a>
+<div class="container">
+    <div class="nav-links">
+        <span onclick="mudarTela('painel-passageiro')" style="cursor:pointer">Passageiro</span> | 
+        <span onclick="abrirLoginMotorista()" style="cursor:pointer">Piloto</span> | 
+        <span onclick="abrirAdmin()" style="cursor:pointer; color:var(--admin-gold)">Admin</span>
     </div>
 
-    <div id="sistema-calculo">
-        <div class="card">
-            <h2 style="color: var(--green); margin-bottom: 5px;">Calcular Corrida</h2>
-            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">Valor real por distância percorrida</p>
-
-            <button class="btn-gps" onclick="pegarLocalizacao()">📍 1. Confirmar Minha Origem</button>
-            <div id="st-gps" style="font-size:12px; color:#fbbf24; margin-top:8px;">Aguardando sinal GPS...</div>
-
-            <input type="text" id="destino" placeholder="2. Digite o endereço de destino">
-
-            <button class="btn-calc" onclick="calcularValor()">💰 3. Calcular Valor</button>
-
-            <div id="box-res">
-                <span id="txt-km" style="color:#94a3b8; font-size:14px;"></span>
-                <span class="preco" id="txt-preco">R$ 0,00</span>
-                <button style="background:#25d366; color:white;" onclick="enviarWhatsApp()">📲 Solicitar via WhatsApp</button>
-            </div>
-            
-            <button style="background:transparent; color:#94a3b8; font-size:12px; text-decoration:underline;" onclick="voltarMenu()">← Voltar ao Início</button>
+    <div id="painel-passageiro" class="painel ativo">
+        <h3 style="margin-top:20px">Pedir Moto Táxi</h3>
+        <div id="map"></div>
+        <div class="route-info">
+            <small>Destino:</small>
+            <input type="text" id="destinoInput" style="width:100%; border:none; background:transparent; font-weight:bold" placeholder="Toque no mapa" readonly>
         </div>
+        <div id="estimativa-preco" class="price-tag">R$ 0,00</div>
+        <button class="btn-main" onclick="enviarChamada()">SOLICITAR AGORA</button>
     </div>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYjEDrKNcWwPBKrBbOOvORNqsfu_SB9EQ&libraries=places"></script>
+    <div id="painel-motorista" class="painel">
+        <div class="driver-header">
+            <img id="m-foto" class="driver-photo" src="" alt="foto" onclick="mudarMinhaFoto()">
+            <div>
+                <strong id="m-nome">Carregando...</strong><br>
+                <small>Saldo: <span id="m-saldo" style="color:green; font-weight:bold">R$ 0,00</span></small>
+            </div>
+            <button class="btn-sm" style="position:absolute; right:10px" onclick="mudarMinhaFoto()">Foto</button>
+        </div>
+        <div id="area-chamada" style="display:none; background:#e8f0fe; padding:15px; border-radius:8px">
+            <h4 style="margin:0; color:var(--driver-blue)">NOVA CORRIDA!</h4>
+            <p id="m-dest-p" style="font-weight:bold; margin:10px 0"></p>
+            <div id="m-preco-p" class="price-tag" style="margin:0"></div>
+            <button class="btn-main" style="background:var(--driver-blue); margin-top:10px" onclick="aceitarCorrida()">ACEITAR E NAVEGAR</button>
+        </div>
+        <p id="esperando" style="color:#888; padding:20px">Aguardando pedidos...</p>
+    </div>
 
-    <script>
-        let lat, lng, kmFinal, precoFinal;
-        const inputDest = document.getElementById('destino');
-        const auto = new google.maps.places.Autocomplete(inputDest);
+    <div id="painel-admin" class="painel">
+        <h3 style="color:var(--admin-gold)">Gestão de Pilotos</h3>
+        <div id="lista-motoristas"></div>
+        <button class="btn-main" style="background:#666; margin-top:10px" onclick="mudarTela('painel-passageiro')">VOLTAR</button>
+    </div>
+</div>
 
-        function abrirCalculadora() {
-            document.getElementById('menu-raiz').style.display = 'none';
-            document.getElementById('sistema-calculo').style.display = 'flex';
-        }
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        function voltarMenu() {
-            document.getElementById('menu-raiz').style.display = 'flex';
-            document.getElementById('sistema-calculo').style.display = 'none';
-        }
+    const firebaseConfig = { databaseURL: "https://moto-taxi-pro-default-rtdb.firebaseio.com" };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        function pegarLocalizacao() {
-            navigator.geolocation.getCurrentPosition(p => {
-                lat = p.coords.latitude; lng = p.coords.longitude;
-                document.getElementById('st-gps').innerText = "Localização confirmada ✔️";
-                document.getElementById('st-gps').style.color = "#22c55e";
-            }, () => alert("Ative seu GPS!"));
-        }
+    let map, markerP, markerD, latP, lonP, latD, lonD, motoristaLogado = null;
 
-        function calcularValor() {
-            const dest = inputDest.value;
-            if (!lat || !dest) return alert("Ative o GPS e digite o destino!");
+    // --- FUNÇÕES DE NAVEGAÇÃO ---
+    window.mudarTela = (id) => {
+        document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+        document.getElementById(id).classList.add('ativo');
+    };
 
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: [{lat, lng}], destinations: [dest], travelMode: 'DRIVING'
-            }, (r, s) => {
-                if (s === 'OK') {
-                    const el = r.rows[0].elements[0];
-                    if (el.status === 'OK') {
-                        kmFinal = el.distance.value / 1000;
-                        // REGRA: R$ 5,00 até 2km + 1,50/km adicional
-                        precoFinal = (kmFinal <= 2) ? 5.00 : 5.00 + ((kmFinal - 2) * 1.50);
-                        
-                        document.getElementById('txt-km').innerText = "Distância: " + kmFinal.toFixed(2) + " km";
-                        document.getElementById('txt-preco').innerText = "R$ " + precoFinal.toFixed(2);
-                        document.getElementById('box-res').style.display = 'block';
-                    } else { alert("Local não encontrado."); }
+    // --- LÓGICA PASSAGEIRO ---
+    navigator.geolocation.getCurrentPosition(pos => {
+        latP = pos.coords.latitude; lonP = pos.coords.longitude;
+        map = L.map('map').setView([latP, lonP], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        markerP = L.marker([latP, lonP]).addTo(map);
+        map.on('click', e => {
+            latD = e.latlng.lat; lonD = e.latlng.lng;
+            if (markerD) map.removeLayer(markerD);
+            markerD = L.marker([latD, lonD]).addTo(map);
+            let dist = (map.distance([latP, lonP], [latD, lonD]) / 1000);
+            let preco = dist <= 3 ? 5.00 : 5.00 + (dist-3)*1.50;
+            document.getElementById('estimativa-preco').innerText = `R$ ${preco.toFixed(2)}`;
+            document.getElementById('destinoInput').value = "Destino marcado no mapa";
+        });
+    });
+
+    window.enviarChamada = () => {
+        if(!latD) return alert("Selecione o destino!");
+        set(ref(db, 'chamada_ativa'), {
+            destino: { lat: latD, lon: lonD, nome: "Corrida Solicitada" },
+            valor: document.getElementById('estimativa-preco').innerText,
+            status: "pendente"
+        }).then(() => alert("Buscando pilotos..."));
+    };
+
+    // --- LÓGICA MOTORISTA ---
+    window.abrirLoginMotorista = () => {
+        const id = prompt("Seu ID de Piloto:");
+        if(!id) return;
+        onValue(ref(db, 'motoristas/' + id), snap => {
+            const m = snap.val();
+            if(m) {
+                motoristaLogado = id;
+                mudarTela('painel-motorista');
+                document.getElementById('m-nome').innerText = m.nome;
+                document.getElementById('m-saldo').innerText = `R$ ${m.saldo.toFixed(2)}`;
+                document.getElementById('m-foto').src = m.foto || "https://via.placeholder.com/150";
+            } else {
+                set(ref(db, 'motoristas/' + id), { nome: "Piloto "+id, saldo: 0, foto: "" });
+            }
+        });
+        onValue(ref(db, 'chamada_ativa'), snap => {
+            const c = snap.val();
+            if(c && c.status === "pendente") {
+                document.getElementById('area-chamada').style.display = 'block';
+                document.getElementById('esperando').style.display = 'none';
+                document.getElementById('m-dest-p').innerText = c.destino.nome;
+                document.getElementById('m-preco-p').innerText = c.valor;
+                window.destGPS = c.destino;
+            } else {
+                document.getElementById('area-chamada').style.display = 'none';
+                document.getElementById('esperando').style.display = 'block';
+            }
+        });
+    };
+
+    window.mudarMinhaFoto = () => {
+        const url = prompt("Link da Foto (URL):");
+        if(url && motoristaLogado) update(ref(db, 'motoristas/'+motoristaLogado), { foto: url });
+    };
+
+    window.aceitarCorrida = () => {
+        update(ref(db, 'chamada_ativa'), { status: "aceita" });
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${window.destGPS.lat},${window.destGPS.lon}&travelmode=motorcycle`);
+    };
+
+    // --- LÓGICA ADMINISTRADOR ---
+    window.abrirAdmin = () => {
+        const pass = prompt("Senha Mestra:");
+        if(pass === "admin123") {
+            mudarTela('painel-admin');
+            onValue(ref(db, 'motoristas'), snap => {
+                const list = document.getElementById('lista-motoristas');
+                list.innerHTML = "";
+                const data = snap.val();
+                for(let id in data) {
+                    let m = data[id];
+                    list.innerHTML += `
+                        <div class="admin-item">
+                            <div style="text-align:left">
+                                <strong>${m.nome}</strong><br>
+                                <small>Saldo: R$ ${m.saldo.toFixed(2)}</small>
+                            </div>
+                            <div>
+                                <button class="btn-sm" onclick="ajustarSaldo('${id}', 5)">+R$5</button>
+                                <button class="btn-sm" onclick="ajustarSaldo('${id}', -5)">-R$5</button>
+                            </div>
+                        </div>`;
                 }
             });
-        }
+        } else { alert("Senha incorreta!"); }
+    };
 
-        function enviarWhatsApp() {
-            const dest = inputDest.value;
-            const tel = "5579999999999";
-            const msg = `*NOVO PEDIDO - AQUIDABÃ*%0A📍 Local: https://www.google.com/maps?q=${lat},${lng}%0A🏁 Destino: ${dest}%0A📏 Km: ${kmFinal.toFixed(2)}%0A💰 Valor: R$ ${precoFinal.toFixed(2)}`;
-            window.open(`https://wa.me/${tel}?text=${msg}`);
-        }
-    </script>
+    window.ajustarSaldo = (id, valor) => {
+        onValue(ref(db, `motoristas/${id}/saldo`), snap => {
+            const atual = snap.val() || 0;
+            update(ref(db, `motoristas/${id}`), { saldo: atual + valor });
+        }, { onlyOnce: true });
+    };
+</script>
 </body>
 </html>
